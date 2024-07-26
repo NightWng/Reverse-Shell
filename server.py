@@ -34,7 +34,7 @@ def bind_socket():
 
         global s  # the variable for our socket
 
-        print ("Binding the Port" + str(port))
+        print ("Binding the Port: " + str(port))
 
         # this double bracket format is known as tuple in python
         s.bind((host, port))
@@ -92,4 +92,10 @@ def send_commands(conn):
 
             # end="" basically allows the command prompt to go to the next line after generating output (as it would)
             print(client_response, end="")
-            
+
+def main():
+    create_socket()
+    bind_socket()
+    accept_socket()
+
+main()
