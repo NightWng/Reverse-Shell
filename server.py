@@ -81,7 +81,7 @@ def send_commands(conn):
             sys.exit()
 
         # anything travelling over the connection between 2 computers is sent in bytes
-        # to actually k,now if the user typed something into the command prompt we need to encode to bytes
+        # to actually know if the user typed something into the command prompt we need to encode to bytes
         # and check if the length of that byte string is > 0. if it is, this means a command has been entered into cmd
         if len(str.encode(cmd)) > 0:
             # to send messages got to be converted from string to bytes
