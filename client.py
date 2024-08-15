@@ -5,7 +5,7 @@ import subprocess
 
 s = socket.socket()
 # host = "for now, since we don't have our live server setup yet, for testing purposes can use IP address of local host"
-host = "" #IPV4 address obtained from ipconfig command on cmd. Used for testing locally.
+host = "167.99.179.219" #This is the static IP address of the server hosted on Digital Ocean. Active as of August 2024
 port = 9999
 
 # similar to s.bind however socket is bound on server side, and connect is to actually connect  with the server
