@@ -85,7 +85,7 @@ def accepting_connections():
             s.setblocking(1)
 
             all_connections.append(conn)
-            all_address(address)
+            all_address.append(address)
 
             # remember "address" is actually a list and the first element of it is the IP address
             print("Connection has been established :" + address[0])
@@ -101,7 +101,7 @@ def accepting_connections():
 # function above will show list of all connections. 'crab' keyword used to access custom functions (crab shell)
 
 def start_crab():
-   
+
     while True:
         cmd = input('crab> ')
         if cmd == 'list':
